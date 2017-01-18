@@ -12,7 +12,7 @@ var uglify = require('gulp-uglify');
 function compile(watch) {
   // browserify will look for our entry files
   var bundler = watchify(browserify(
-    { entries: ['./js-source/app.jsx'], debug: true, extensions: ['.js', '.jsx'] }
+    { entries: ['./assets/app.jsx'], debug: true, extensions: ['.js', '.jsx'] }
   ).transform(babel));
 
   function rebundle() {
@@ -22,7 +22,7 @@ function compile(watch) {
         console.error(err); 
         this.emit('end'); 
        })
-      .pipe(source('app.jsx')) // this will generate the non minify version of bundle script
+      .pipe(source('app.js')) // this will generate the non minify version of bundle script
       .pipe(buffer())
       .pipe(gulp.dest('./build'))
       .pipe(rename('app.min.js')) // rename the original file for minify version
