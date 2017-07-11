@@ -8,6 +8,18 @@ var watchify = require('watchify');
 var babel = require('babelify');
 var rename = require('gulp-rename');
 var uglify = require('gulp-uglify');
+const sass = require('gulp-sass');
+const plumber = require('gulp-plumber');
+const notify = require('gulp-notify');
+const autoprefixer = require('gulp-autoprefixer');
+// Error handling
+// --------------
+const handle_error = notify.onError({
+    title: "Oops!",
+    message: "<%= error.message %>",
+});
+const plumber_notifier = ()=>
+    plumber({ errorHandler: handle_error });
 
 function compile(watch) {
   // browserify will look for our entry files
@@ -48,6 +60,28 @@ function watch() {
 
 gulp.task('watch', function () { return watch(); });
 
+gulp.task('sass', [],  function () {
+    return gulp.src('./assets/sass/**/*.s[ac]ss')
+        .pipe(plumber_notifier())
+        .pipe(rename('flow.css'))
+        .pipe(sourcemaps.init())
+        .pipe(sass({
+            style: 'expanded'
+        }))
+        .pipe(autoprefixer())
+        .pipe(sourcemaps.write())
+        .pipe(gulp.dest('./public/css'))
+    ;
+});
+
 // set our default task to watch so that the gulp process will monitor
 // for any change and rebuilding the javascript files.﻿
-gulp.task('default', ['watch']);
+gulp.task('default', [
+    'watch',
+    'sass'
+], function () {
+    gulp.watch('./assets/sass/**/*.s[ac]ss', [ 'sass' ]);
+});
+
+
+// gulp.task('default', ['watch']);

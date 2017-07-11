@@ -1,12 +1,8 @@
 import React from 'react';
 import { render } from 'react-dom';
-import { ContainerLogic } from './components/container_logic.jsx';
+import { ContainerLogic } from './components/sample_survey.jsx';
 
 render(
-    (
-        <div>
-            <h1>React Native Dojo - IMDB</h1>
-            <ContainerLogic name='Sampinha' />
-        </div>
-    ), document.getElementById('reactDiv')
+    <ContainerLogic name='Sampinha' />
+	, document.getElementById('reactDiv')
 )
