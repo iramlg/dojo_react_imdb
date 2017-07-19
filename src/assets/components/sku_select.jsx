@@ -12,7 +12,8 @@ export class SKUSelect extends React.Component {
     componentWillMount() {
     	this.setState({
     		skuList: this.props.skuList,
-    		visibleSKUs: this.props.skuList
+    		visibleSKUs: this.props.skuList,
+            selectedSKUs: this.props.skuSelecteds ? this.props.skuSelecteds : []
     	})
     }
 
@@ -43,7 +44,8 @@ export class SKUSelect extends React.Component {
 	}
 
 	saveSKUList() {
-
+        this.props.onSaveSKUs(this.props.skuQuestion.PerguntaId, this.state.selectedSKUs);
+        this.props.onCloseModal();
 	}
 
     render() {
@@ -73,7 +75,7 @@ export class SKUSelect extends React.Component {
                     })}
                 </div>
                 <div className="buttonHolder">
-                	<button onClick={() => {this.props.onCloseModal().bind(this)}} type="button" className="btn btn-labeled btn-default">
+                	<button onClick={() => {this.props.onCloseModal()}} type="button" className="btn btn-labeled btn-default">
 						<label><span>Fechar</span></label>
 					</button>
 					<button onClick={this.saveSKUList.bind(this)} type="button" className="btn btn-labeled btn-primary">

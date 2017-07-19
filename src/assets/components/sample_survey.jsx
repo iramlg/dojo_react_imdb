@@ -9,8 +9,8 @@ export class ContainerLogic extends React.Component {
 			filterText: '',
 			filterType: '',
 			questions: [],
-			selectedQuestions: [],
-			selectedAnswers: [],
+			selectedQuestions: {},
+			totalCount: 0,
 			skuAssocieted: [{"Id":1804,"Product":"MORTADELA OURO PEÇA EMB. 4KG PERDIGÃO","CategoryId":7,"IsOwner":true,"Required":false},{"Id":1986,"Product":"BACON GRANEL PERDIGÃO","CategoryId":6,"IsOwner":true,"Required":false},{"Id":2009,"Product":"LCP420/ LCP820 - LING CALABRESA PERD PCT (4,5 KG) OU (2,5KG)","CategoryId":6,"IsOwner":true,"Required":false},{"Id":2016,"Product":"LCSP 1CX20.0 - LING SUÍNA PERD 20KG (PACOTÃO OU BANDEJA)","CategoryId":6,"IsOwner":true,"Required":false},{"Id":2040,"Product":"POP014 - PRESUNTO PERDIGAO (FATIADO OU PEÇA)","CategoryId":7,"IsOwner":true,"Required":false},{"Id":2551,"Product":"HAMBURGUER SEARA (UN)","CategoryId":1,"IsOwner":false,"Required":false},{"Id":2571,"Product":"LASANHA SEARA 4 QUEIJOS","CategoryId":1,"IsOwner":false,"Required":false},{"Id":2573,"Product":"TEKITOS SEARA","CategoryId":1,"IsOwner":false,"Required":false},{"Id":2574,"Product":"EMP. TURMA DA MONICA SEARA 300G","CategoryId":1,"IsOwner":false,"Required":false},{"Id":2883,"Product":"LASANHA BOLONHESA SEARA (UN)","CategoryId":1,"IsOwner":false,"Required":false}],
 			loading: true
 		}
@@ -36,6 +36,7 @@ export class ContainerLogic extends React.Component {
 	}
 
 	saveForm() {
+		console.log(this.state.selectedQuestions)
 	}
 
 	changeKeyword(eventInput) {
@@ -66,41 +67,80 @@ export class ContainerLogic extends React.Component {
 		})
 	}
 
-	onSaveSkUs(item) {
-
-	}
-
-	selectAnswer(id) {
-		let selectedAnswers = this.state.selectedAnswers;
-
-		if (selectedAnswers.indexOf(id) >= 0) {
-			selectedAnswers.splice(selectedAnswers.indexOf(id), 1);
-		} else {
-			selectedAnswers.push(id);
-		}
-
-		this.setState({
-			selectedAnswers: selectedAnswers
-		});
-	}
-
-	selectQuestion(id) {
+	onSaveSkUs(question_id, items) {
 		let selectedQuestions = this.state.selectedQuestions;
 
-		if (selectedQuestions.indexOf(id) >= 0) {
-			selectedQuestions.splice(selectedQuestions.indexOf(id), 1);
-		} else {
-			selectedQuestions.push(id);
-		}
-
+		selectedQuestions[question_id].skus = items;
 		this.setState({
 			selectedQuestions: selectedQuestions
 		});	
 	}
 
+	selectAnswer(question_id, answer_id) {
+		let selectedQuestions = this.state.selectedQuestions;
+
+		if (selectedQuestions[question_id]) {
+			if (selectedQuestions[question_id].answers.includes(answer_id)) {
+				selectedQuestions[question_id].answers.splice(selectedQuestions[question_id].answers.indexOf(answer_id), 1);
+
+				if (!selectedQuestions[question_id].answers.length)
+					delete selectedQuestions[question_id]
+				
+			} else {
+				selectedQuestions[question_id].answers.push(answer_id);
+			}
+		} else {
+			selectedQuestions[question_id] = {
+				id: question_id,
+				answers: []
+			}
+			selectedQuestions[question_id].answers.push(answer_id);
+		}
+
+		this.setState({
+			selectedQuestions: selectedQuestions
+		});	
+		this.updateCount();
+	}
+
+	selectQuestion(id) {
+		let selectedQuestions = this.state.selectedQuestions;
+
+		if (selectedQuestions[id]) {
+			delete selectedQuestions[id];
+		} else {
+			selectedQuestions[id] = {
+				id: id
+			}
+		}
+
+		this.setState({
+			selectedQuestions: selectedQuestions
+		});	
+
+		this.updateCount();
+	}
+
 	setQuantity(eventInput) {
 		this.setState({
 			quantity:eventInput.target.value
+		})
+	}
+
+	updateCount() {
+		let sQ = this.state.selectedQuestions;
+		let count = 0;
+
+		for (let key in sQ) {
+			if (!sQ[key].answers || (sQ[key].answers === undefined)) {
+				count = count + 1;
+			} else {
+				count = count + sQ[key].answers.length;
+			}
+		}
+
+		this.setState({
+			totalCount: count
 		})
 	}
 
@@ -110,7 +150,6 @@ export class ContainerLogic extends React.Component {
 		if (s.loading)
 			return (<div></div>)
 
-		console.log(s);
 		return (
 			<div className="sampleSurveyConfig">
 				<div className="row">
@@ -158,10 +197,10 @@ export class ContainerLogic extends React.Component {
 										item.Answers.map((answer, i) => {
 											return (
 												<div className="answerSelect" key={'answer-' + i}>
-													{s.selectedAnswers.includes(answer.AnswerId) && <i className="fa fa-check"></i>}
+													{s.selectedQuestions[item.PerguntaId] && s.selectedQuestions[item.PerguntaId].answers.includes(answer.AnswerId) && <i className="fa fa-check"></i>}
 													<span 
-														onClick={this.selectAnswer.bind(this, answer.AnswerId)} 
-														className={s.selectedAnswers.includes(answer.AnswerId) ? "text selected" : "text"}>
+														onClick={this.selectAnswer.bind(this, item.PerguntaId, answer.AnswerId)} 
+														className={(s.selectedQuestions[item.PerguntaId] && s.selectedQuestions[item.PerguntaId].answers.includes(answer.AnswerId)) ? "text selected" : "text"}>
 														{answer.Description}
 													</span>
 												</div>
@@ -170,17 +209,21 @@ export class ContainerLogic extends React.Component {
 									: 
 										(
 											<div className="answerSelect" key={'answer-' + i}>
-												{s.selectedQuestions.includes(item.PerguntaId) && <i className="fa fa-check"></i>}
+												{s.selectedQuestions[item.PerguntaId] && <i className="fa fa-check"></i>}
 												<span 
 													onClick={this.selectQuestion.bind(this, item.PerguntaId)} 
-													className={s.selectedQuestions.includes(item.PerguntaId) ? "text selected" : "text"}>
+													className={s.selectedQuestions[item.PerguntaId] ? "text selected" : "text"}>
 													Tornar essa resposta auditável
 												</span>
 											</div>
 										)
 									}
-									{item.Sku && (s.selectedQuestions.includes(item.PerguntaId)) && (
-										<button className="skuButton" onClick={() => {this.setState({skuQuestion:item})}} >Configurar SKU</button>
+									{item.Sku && (s.selectedQuestions[item.PerguntaId]) && (
+										<button 
+											className={(s.selectedQuestions[item.PerguntaId].skus && s.selectedQuestions[item.PerguntaId].skus.length) ? "skuButton active" : "skuButton"} 
+											onClick={() => {this.setState({skuQuestion:item})}} >
+											Configurar SKU
+										</button>
 									)}
 								</div>
 							)
@@ -189,7 +232,7 @@ export class ContainerLogic extends React.Component {
 					<div className="sampleSurveySumary col-md-3">
 						<h3>Sumário</h3>
 						<div>
-							<p>{s.selectedAnswers.length + s.selectedQuestions.length}</p>
+							<p>{s.totalCount}</p>
 							<p>respostas selecionadas</p>
 						</div>
 						<div>
@@ -212,6 +255,7 @@ export class ContainerLogic extends React.Component {
                     >
                         <SKUSelect
                             skuQuestion={s.skuQuestion}
+                            skuSelecteds={s.selectedQuestions[s.skuQuestion.PerguntaId].skus}
                             skuList={s.skuAssocieted}
                             onSaveSKUs={this.onSaveSkUs.bind(this)}
                             onCloseModal={() => {this.setState({skuQuestion:false})}}
